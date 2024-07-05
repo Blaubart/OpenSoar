@@ -39,22 +39,22 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
 {
   StaticString<60> title;
   
-  title.Format(_(" - Upload IGC Files to USB"), main_app);
+  title.Format(_(" - Upload IGC Files to USB (WIP)"), main_app);
   AddLabel(title);
 
-  AddButton(_("Upload IGC Files (WIP)"), []() {
+  AddButton(_("Upload IGC Files"), []() {
     static constexpr const char *argv[] = {
             "/usr/bin/download-igc.sh", nullptr
     };
     RunProcessDialog(UIGlobals::GetMainWindow(),
             UIGlobals::GetDialogLook(),
-            _("Download IGC Files"), argv);
+            _("Download IGC Files to USB"), argv);
   });
 
   //-----------------------------------------------------
-  title.Format(_(" - File Upload %s Data"), main_app);
+  title.Format(_(" - Upload Files to OpenVario from USB (map, profile. airspce, etc.)"), main_app);
   AddLabel(title);
-  AddButton(_("Upload files to OpenVario from USB (map, profile. airspce, etc.)"), []() {
+  AddButton(_("Upload Files to OpenVario"), []() {
     static constexpr const char *argv[] = {"/usr/bin/transfers.sh",
                                            "upload-data", _main_app, nullptr};
 
@@ -64,10 +64,10 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
                      dialog_title, argv);
   });
 
-  title.Format(_(" - Backup and Restore OpenSoar only"), main_app);
+  title.Format(_(" - Backup and Restore OpenVario Settings and Files to USB"), main_app);
   AddLabel(title);
 
-  AddButton(_("Save OpenVario Settings and Files to USB"), []() {
+  AddButton(_("Backup"), []() {
     static constexpr const char *argv[] = {
             "/usr/bin/transfers.sh", "download-data", _main_app, nullptr
     };
@@ -77,7 +77,7 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
             _("Download files"), argv);
   });
 
-  AddButton(_("Restore OpenVario Settings and Files from USB"), []() {
+  AddButton(_("Restore"), []() {
     static constexpr const char *argv[] = {"/usr/bin/transfers.sh",
                                            "restore-data", _main_app, nullptr};
 
@@ -88,10 +88,10 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
   });
 
   //-----------------------------------------------------
-  title.Format(_("- Backup and Restore OpenSoar AND OpenVario System"), main_app);
+  title.Format(_("- Backup and Restore OpenSoar AND OpenVario System to USB"), main_app);
   AddLabel(title); // "---OpenSoar Data Files---");
 
-  AddButton(_("Backup OpenSoar AND OpenVario System to USB"), []() {
+  AddButton(_("Backup System"), []() {
     static constexpr const char *argv[] = {"/usr/bin/transfer-system.sh",
                                            "backup", _main_app, nullptr
     };
@@ -101,7 +101,7 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
             _("Backup System"), argv);
   });
   
-  AddButton(_("Restore OpenSoar AND OpenVario System from USB"), []() {
+  AddButton(_("Restore System"), []() {
      static constexpr const char *argv[] = {"/usr/bin/transfer-system.sh",
                                            "restore", _main_app, nullptr
      };
