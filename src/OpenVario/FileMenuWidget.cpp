@@ -52,7 +52,7 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
   });
 
   //-----------------------------------------------------
-  title.Format(_(" - Upload Files to OpenVario from USB (map, profile. airspce, etc.)"), main_app);
+  title.Format(_(" - Upload Files to OpenVario from USB (map, profile, etc.)"), main_app);
   AddLabel(title);
   AddButton(_("Upload Files to OpenVario"), []() {
     static constexpr const char *argv[] = {"/usr/bin/transfers.sh",
@@ -67,7 +67,7 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
   title.Format(_(" - Backup and Restore OpenVario Settings and Files to USB"), main_app);
   AddLabel(title);
 
-  AddButton(_("Backup"), []() {
+  AddButton(_("Backup OpenSoar"), []() {
     static constexpr const char *argv[] = {
             "/usr/bin/transfers.sh", "download-data", _main_app, nullptr
     };
@@ -77,7 +77,7 @@ void FileMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
             _("Download files"), argv);
   });
 
-  AddButton(_("Restore"), []() {
+  AddButton(_("Restore OpenSoar"), []() {
     static constexpr const char *argv[] = {"/usr/bin/transfers.sh",
                                            "restore-data", _main_app, nullptr};
 
