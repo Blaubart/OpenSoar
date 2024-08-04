@@ -35,6 +35,7 @@ using std::string_view_literals::operator""sv;
  * $PFV,B,S,<double value>  - set Bugs to percent by capacity 0 - 100
  * $PFV,S,S,<integer value> - set Mute status and gives it back to sound board
  * $PFV,A,S,<integer value> - set attenuation and gives it back to sound board
+ * $PFV,D,S,<integer value> - set STF-Mode and gives it back to sound board 
  *
  * Commands for NMEA compatibility with OpenVario especially variod
  * 
@@ -196,6 +197,19 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
         bool stateOK = line.ReadChecked(attenState);
         if (stateOK)
           snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,ATT,%d", attenState);
+        PortWriteNMEA(port, nmeaOutbuffer, env);
+        validMessage = true;
+      }
+      break;
+    }
+
+    case 'D': {
+      if (subCommand == 'S') {
+        char nmeaOutbuffer[80];
+        int STFState;
+        bool stateOK = line.ReadChecked(STFState);
+        if (stateOK)
+          snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,SMO,%d", STFState);
         PortWriteNMEA(port, nmeaOutbuffer, env);
         validMessage = true;
       }
