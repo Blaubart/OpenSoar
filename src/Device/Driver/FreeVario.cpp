@@ -66,7 +66,8 @@ public:
 };
 
 /**
- * Parse NMEA messsage and check if it is a valid FreeVario message
+ * Parse NMEA messsage to change between STF and vario mode 
+   and check if it is a valid FreeVario message
  * Is true when a valid message or false if no valid message
  */
 bool
@@ -79,22 +80,23 @@ FreeVarioDevice::POVParserAndForward(NMEAInputLine &line)
   while (!line.IsEmpty() ) {
 
      char command = line.ReadOneChar();
+      if (command >= 32 && command <= 126) {
+        char buff[4] ;
+        line.Read(buff,4);
+        StaticString<4> bufferAsString(buff);
 
-      char buff[4] ;
-      line.Read(buff,4);
-      StaticString<4> bufferAsString(buff);
-
-     if ( 'C' == command && strcmp("STF",bufferAsString) == 0){
-       messageValid = true;
-       InputEvents::eventSendNMEAPort1("POV,C,STF*4B");
-       InputEvents::eventSendNMEAPort2("POV,C,STF*4B");
-       InputEvents::eventStatusMessage("Speed to Fly Mode");
-     }
-     if ('C' == command && strcmp("VAR",bufferAsString) == 0){
-       messageValid = true;
-       InputEvents::eventSendNMEAPort1("POV,C,VAR*4F");
-       InputEvents::eventSendNMEAPort2("POV,C,VAR*4F");
-       InputEvents::eventStatusMessage("Vario Mode");
+       if ( 'C' == command && strcmp("STF",bufferAsString) == 0){
+         messageValid = true;
+         InputEvents::eventSendNMEAPort1("POV,C,STF*4B");
+         InputEvents::eventSendNMEAPort2("POV,C,STF*4B");
+         InputEvents::eventStatusMessage("Speed to Fly Mode");
+       }
+       if ('C' == command && strcmp("VAR",bufferAsString) == 0){
+         messageValid = true;
+         InputEvents::eventSendNMEAPort1("POV,C,VAR*4F");
+         InputEvents::eventSendNMEAPort2("POV,C,VAR*4F");
+         InputEvents::eventStatusMessage("Vario Mode");
+       }
      }
   }
   return messageValid;
@@ -225,7 +227,7 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
  }
 
 /**
- * Parse incoming NMEA messages to check for PFV messages
+ * Parse incoming NMEA messages to check for PFV or POV messages
  */
 bool
 FreeVarioDevice::ParseNMEA(const char *_line, NMEAInfo &info)
@@ -362,11 +364,12 @@ FreeVarioDevice::OnCalculatedUpdate(const MoreData &basic,
     PortWriteNMEA(port, nmeaOutbuffer, env);
   }
 
-  if (basic.settings.qnh_available.IsValid()){
-    double qnhHp = basic.settings.qnh.GetHectoPascal();
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,QNH,%f",qnhHp);
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-  }
+/*
+ * if (basic.settings.qnh_available.IsValid()){
+ *   double qnhHp = basic.settings.qnh.GetHectoPascal();
+ *   snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,QNH,%f",qnhHp);
+ *   PortWriteNMEA(port, nmeaOutbuffer, env);
+ * }*/
 }
 
 /*
