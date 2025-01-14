@@ -356,21 +356,13 @@ FreeVarioDevice::OnCalculatedUpdate(const MoreData &basic,
   PortWriteNMEA(port, nmeaOutbuffer, env);
 
   if (basic.ground_speed_available.IsValid()){
-    double groundSpeed = ((basic.ground_speed * 60 * 60) / 1000);;
+    double groundSpeed = ((basic.ground_speed * 60 * 60) / 1000);
     snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,GRS,%f", groundSpeed);
     PortWriteNMEA(port, nmeaOutbuffer, env);
   } else {
     snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,GRS,%d", -1);
     PortWriteNMEA(port, nmeaOutbuffer, env);
   }
-
-/*
- * if (basic.settings.qnh_available.IsValid()){
- *   double qnhHp = basic.settings.qnh.GetHectoPascal();
- *   snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,QNH,%f",qnhHp);
- *   PortWriteNMEA(port, nmeaOutbuffer, env);
- * }*/
-}
 
 /*
  *  Send the internal xcsoar mc value to FreeVario device to
