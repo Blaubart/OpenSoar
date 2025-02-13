@@ -363,7 +363,7 @@ FreeVarioDevice::OnCalculatedUpdate(const MoreData &basic,
     snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,GRS,%d", -1);
     PortWriteNMEA(port, nmeaOutbuffer, env);
   }
-
+}
 /*
  *  Send the internal xcsoar mc value to FreeVario device to
  *  be informed about MC changes doen in XCSoar
