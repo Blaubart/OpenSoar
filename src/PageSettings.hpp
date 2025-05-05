@@ -8,6 +8,7 @@
 #include <span>
 #include <type_traits>
 
+#include <tchar.h>
 
 struct InfoBoxSettings;
 
@@ -32,7 +33,12 @@ struct PageLayout
       panel = 0;
     }
 
-    constexpr bool operator==(const InfoBoxConfig &other) const noexcept = default;
+    // constexpr bool operator==(const InfoBoxConfig &other) const noexcept = default;
+    bool operator==(const InfoBoxConfig &other) const {
+      return enabled == other.enabled &&
+        auto_switch == other.auto_switch &&
+        panel == other.panel;
+    }
   };
 
   bool valid;
@@ -136,7 +142,13 @@ struct PageLayout
                          std::span<char> buffer,
                          const bool concise=false) const noexcept;
 
-  constexpr bool operator==(const PageLayout &other) const noexcept = default;
+  // constexpr bool operator==(const PageLayout &other) const noexcept = default;
+  bool operator==(const PageLayout &other) const {
+    return valid == other.valid &&
+      main == other.main &&
+      bottom == other.bottom &&
+      infobox_config == other.infobox_config;
+  }
 };
 
 struct PageSettings {
