@@ -109,8 +109,8 @@ elif toolchain.is_unix:
 
     thirdparty_libs = []
     thirdparty_libs += [
-      netcdf,
-      netcdfcxx
+      "netcdf",
+      "netcdfcxx"
     ]
 else:
     print('toolchain: ', toolchain.build_path, ' - ', toolchain.install_prefix, ' - ', toolchain.host_triplet)
@@ -129,8 +129,8 @@ if with_skysight:
     # with_geotiff = True - the geotiff libs have to be included before skysight
     # therefore 
     thirdparty_libs += [
-        netcdf,
-        netcdfcxx
+        "netcdf",
+        "netcdfcxx"
     ]
     
 # build the third-party libraries
