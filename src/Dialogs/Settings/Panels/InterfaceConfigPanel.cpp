@@ -70,7 +70,7 @@ InterfaceConfigPanel::Prepare(ContainerWindow &parent,
 
   AddInteger(_("Text size"),
              nullptr,
-             "%d %%", "%d", 75, 200, 5,
+             "%d %%", "%d", 75, 300, 5,
              settings.scale);
 
   WndProperty *wp_dpi = AddEnum(_("Display Resolution"),
