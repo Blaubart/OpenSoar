@@ -182,7 +182,7 @@ ExpandTaskMacros(std::string_view name,
       settings_computer.task.IsAutoMCFinalGlideEnabled();
     return "";
   } else if (name == "MC_Value") {
-    char buffer[20];
+    static char buffer[20];
     const Unit unit = Units::GetUserUnitByGroup(UnitGroup::VERTICAL_SPEED);
     auto value = Units::ToUserUnit(settings_computer.polar.glide_polar_task.GetMC(), unit);
     auto unit_str = Units::GetUnitName(unit);
@@ -305,9 +305,6 @@ LookupMacro(std::string_view name, bool &invalid) noexcept
   } else if (name == "CheckTerrain") {
     invalid |= !Calculated().terrain_valid;
     return nullptr;
-  } else if (name == "CheckSTF") {
-    auto stf_switch = const_cast<STFSettings *>(&CommonInterface::GetComputerSettings().stf_switch);
-    return (stf_switch->stf_mode == TriState::TRUE) ? "-> Vario" : "-> STF";
   } else if (name == "AudioVolume") {
     StaticString<10> s; 
     s.Format("%u / 7",
