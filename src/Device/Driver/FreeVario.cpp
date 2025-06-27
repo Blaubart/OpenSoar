@@ -89,13 +89,11 @@ FreeVarioDevice::POVParserAndForward(NMEAInputLine &line)
          messageValid = true;
          InputEvents::eventSendNMEAPort1("POV,C,STF*4B");
          InputEvents::eventSendNMEAPort2("POV,C,STF*4B");
-         InputEvents::eventStatusMessage("Speed to Fly Mode");
        }
        if ('C' == command && strcmp("VAR",bufferAsString) == 0){
          messageValid = true;
          InputEvents::eventSendNMEAPort1("POV,C,VAR*4F");
          InputEvents::eventSendNMEAPort2("POV,C,VAR*4F");
-         InputEvents::eventStatusMessage("Vario Mode");
        }
      }
   }
@@ -171,9 +169,11 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
     case 'F': {
       if (subCommand == 'S') {
         info.switch_state.flight_mode = SwitchState::FlightMode::CRUISE;
+        InputEvents::eventStatusMessage("Speed to Fly Mode");
         validMessage = true;
       } else if (subCommand == 'C') {
         info.switch_state.flight_mode = SwitchState::FlightMode::CIRCLING;
+        InputEvents::eventStatusMessage("Vario Mode");
         validMessage = true;
       }
       break;
