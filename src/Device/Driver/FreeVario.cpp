@@ -175,6 +175,10 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
         info.switch_state.flight_mode = SwitchState::FlightMode::CIRCLING;
         InputEvents::eventStatusMessage("Vario Mode");
         validMessage = true;
+      } else if (subCommand == 'A') {
+        info.switch_state.flight_mode = SwitchState::FlightMode::UNKNOWN;
+        InputEvents::eventStatusMessage("Automatic Mode");
+        validMessage = true;
       }
       break;
     }
