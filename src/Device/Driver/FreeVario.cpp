@@ -35,6 +35,7 @@ using std::string_view_literals::operator""sv;
  * $PFV,B,S,<double value>  - set Bugs to percent by capacity 0 - 100
  * $PFV,S,S,<integer value> - set Mute status and gives it back to sound board
  * $PFV,A,S,<integer value> - set attenuation and gives it back to sound board
+ * $PFV,D,S,<integer value> - set STF-Mode and gives it back to sound board 
  *
  * Commands for NMEA compatibility with OpenVario especially variod
  * 
@@ -65,7 +66,8 @@ public:
 };
 
 /**
- * Parse NMEA messsage and check if it is a valid FreeVario message
+ * Parse NMEA messsage to change between STF and vario mode 
+   and check if it is a valid FreeVario message
  * Is true when a valid message or false if no valid message
  */
 bool
@@ -76,40 +78,24 @@ FreeVarioDevice::POVParserAndForward(NMEAInputLine &line)
   bool messageValid = false;
 
   while (!line.IsEmpty() ) {
-    char command = line.ReadOneChar();
-    char buff[4] ;
 
-    line.Read(buff,4);
-    // TODO(August2111): I don't know, why this command should be
-    // mirrored in the driver to the eventSendNMEAPort(1) and (2)
-    // what is the sense for this
-    // From FreeVario device is coming a '$POV,C,XXX command
+     char command = line.ReadOneChar();
+      if (command >= 32 && command <= 126) {
+        char buff[4] ;
+        line.Read(buff,4);
+        StaticString<4> bufferAsString(buff);
 
-    if (command == 'C') {
-      char buffer[64];
-      sprintf(buffer, "POV,C,%s", buff);
-      PortWriteNMEA(port, buffer, env);
-    }
-#ifdef FREEVARIO_EVENT
-    // TODO(August2111): in the moment this output is not allowed
-    // with build-native it shows ' error: undefined reference to
-    // 'InputEvents::eventXXX(char const*)', but I don't know why yet
-    // info.switch_state.flight_mode = SwitchState::FlightMode::CIRCLING;
-    StaticString<4> bufferAsString;
-    bufferAsString.SetUTF8(buff);
-    if ('C' == command && bufferAsString == "STF") {
-      messageValid = true;
-      InputEvents::eventSendNMEAPort1("POV,C,STF*4B");
-      InputEvents::eventSendNMEAPort2("POV,C,STF*4B");
-      InputEvents::eventStatusMessage("Speed to Fly Mode");
-    }
-    if ('C' == command && bufferAsString == "VAR") {
-      messageValid = true;
-      InputEvents::eventSendNMEAPort1("POV,C,VAR*4F");
-      InputEvents::eventSendNMEAPort2("POV,C,VAR*4F");
-      InputEvents::eventStatusMessage("Vario Mode");
-    }
-#endif
+       if ( 'C' == command && strcmp("STF",bufferAsString) == 0){
+         messageValid = true;
+         InputEvents::eventSendNMEAPort1("POV,C,STF*4B");
+         InputEvents::eventSendNMEAPort2("POV,C,STF*4B");
+       }
+       if ('C' == command && strcmp("VAR",bufferAsString) == 0){
+         messageValid = true;
+         InputEvents::eventSendNMEAPort1("POV,C,VAR*4F");
+         InputEvents::eventSendNMEAPort2("POV,C,VAR*4F");
+       }
+     }
   }
   return messageValid;
 }
@@ -183,9 +169,15 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
     case 'F': {
       if (subCommand == 'S') {
         info.switch_state.flight_mode = SwitchState::FlightMode::CRUISE;
+        InputEvents::eventStatusMessage("Speed to Fly Mode");
         validMessage = true;
       } else if (subCommand == 'C') {
         info.switch_state.flight_mode = SwitchState::FlightMode::CIRCLING;
+        InputEvents::eventStatusMessage("Vario Mode");
+        validMessage = true;
+      } else if (subCommand == 'A') {
+        info.switch_state.flight_mode = SwitchState::FlightMode::UNKNOWN;
+        InputEvents::eventStatusMessage("Automatic Mode");
         validMessage = true;
       }
       break;
@@ -197,7 +189,7 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
         int soundState;
         bool stateOK = line.ReadChecked(soundState);
         if (stateOK)
-          sprintf(nmeaOutbuffer, "PFV,MUT,%d", soundState);
+          snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,MUT,%d", soundState);
         PortWriteNMEA(port, nmeaOutbuffer, env);
         validMessage = true;
       }
@@ -210,7 +202,20 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
         int attenState;
         bool stateOK = line.ReadChecked(attenState);
         if (stateOK)
-          sprintf(nmeaOutbuffer, "PFV,ATT,%d", attenState);
+          snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,ATT,%d", attenState);
+        PortWriteNMEA(port, nmeaOutbuffer, env);
+        validMessage = true;
+      }
+      break;
+    }
+
+    case 'D': {
+      if (subCommand == 'S') {
+        char nmeaOutbuffer[80];
+        int STFState;
+        bool stateOK = line.ReadChecked(STFState);
+        if (stateOK)
+          snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,SMO,%d", STFState);
         PortWriteNMEA(port, nmeaOutbuffer, env);
         validMessage = true;
       }
@@ -226,7 +231,7 @@ FreeVarioDevice::PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port)
  }
 
 /**
- * Parse incoming NMEA messages to check for PFV messages
+ * Parse incoming NMEA messages to check for PFV or POV messages
  */
 bool
 FreeVarioDevice::ParseNMEA(const char *_line, NMEAInfo &info)
@@ -246,28 +251,34 @@ FreeVarioDevice::ParseNMEA(const char *_line, NMEAInfo &info)
 }
 
 /*
- * Send total_energy_vario to FreeVario device on every sensor update.
- * Is needed to have a good refresh rate on the external device showing the
- * vario values
+ * Send total_energy_vario, external wind direction and external wind speed to 
+ * FreeVario device on every sensor update. Is needed to have a good refresh 
+ * rate on the external device showing the vario and external wind values.
  */
 void
 FreeVarioDevice::OnSensorUpdate(const MoreData &basic)
 {
-   NullOperationEnvironment env;
-   char nmeaOutbuffer[80];
 
-   if (basic.total_energy_vario_available.IsValid()) {
-     sprintf(nmeaOutbuffer,"PFV,VAR,%f", basic.total_energy_vario);
-     PortWriteNMEA(port, nmeaOutbuffer, env);
-   }
+ NullOperationEnvironment env;
+ char nmeaOutbuffer[80];
+
+ if (basic.total_energy_vario_available.IsValid()) {
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,VAR,%f", basic.total_energy_vario);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ }
+
+  if (basic.settings.mac_cready_available.IsValid()){
+    double externalMC = basic.settings.mac_cready;
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,MCE,%0.2f", (double)externalMC);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+  }
 
    // TODO(August2111): basic.netto_variable has no timestamp unfortunately?
    // if (basic.netto_vario_available.IsValid()) {
-     sprintf(nmeaOutbuffer,"PFV,VAN,%f", basic.netto_vario);
-     PortWriteNMEA(port, nmeaOutbuffer, env);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,VAN,%f", basic.netto_vario);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
    // }
 }
-
 
 /*
  * Always send the calculated updated values to the FreeVario to have a good
@@ -277,75 +288,86 @@ void
 FreeVarioDevice::OnCalculatedUpdate(const MoreData &basic,
   const DerivedInfo &calculated)
 {
-  NullOperationEnvironment env;
 
-  char nmeaOutbuffer[80];
+ NullOperationEnvironment env;
+ char nmeaOutbuffer[80];
 
- if (basic.baro_altitude_available.IsValid()){
-   sprintf(nmeaOutbuffer,"PFV,HIG,%f", basic.baro_altitude);
-   PortWriteNMEA(port, nmeaOutbuffer, env);
- } else if (basic.gps_altitude_available.IsValid()){
-   sprintf(nmeaOutbuffer,"PFV,HIG,%f", basic.gps_altitude);
-   PortWriteNMEA(port, nmeaOutbuffer, env);
- } else {
-   sprintf(nmeaOutbuffer,"PFV,HIG,%f", 0.0);
-   PortWriteNMEA(port, nmeaOutbuffer, env);
+ if (!basic.external_instantaneous_wind_available.IsValid() && calculated.wind.IsNonZero() && basic.track_available){
+    const Angle relWindDirection = (calculated.wind.bearing - Angle::HalfCircle() - basic.track).AsBearing();
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWD,%f", relWindDirection.Degrees());
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWS,%f", calculated.wind.norm);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ }
+ 
+ if (basic.external_wind_available.IsValid() && basic.attitude.heading_available){
+    const Angle relWindDirection = (basic.external_wind.bearing - Angle::HalfCircle() - basic.attitude.heading).AsBearing();     
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWD,%f", relWindDirection.Degrees());
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWS,%f", basic.external_wind.norm);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
  }
 
+ if (basic.external_instantaneous_wind_available.IsValid() && basic.attitude.heading_available){
+    const Angle relWindDirection = (basic.external_instantaneous_wind.bearing - Angle::HalfCircle() - basic.attitude.heading).AsBearing();     
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,CWD,%f", relWindDirection.Degrees());
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,CWS,%f", basic.external_instantaneous_wind.norm);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ }
+ 
+ // vario average last 30 secs
+ snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,VAA,%f",calculated.average);
+ PortWriteNMEA(port, nmeaOutbuffer, env);
+
  if (calculated.altitude_agl_valid){
-   sprintf(nmeaOutbuffer,"PFV,HAG,%f", calculated.altitude_agl);
-   PortWriteNMEA(port, nmeaOutbuffer, env);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,HAG,%f", calculated.altitude_agl);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ }
+
+ if (calculated.circling){
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,MOD,%s", "C");
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ } else {
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,MOD,%s", "S");
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ }
+ 
+  double stfKmh = ((calculated.V_stf * 60 * 60) / 1000);
+  snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,STF,%f", stfKmh);
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+  
+ if (basic.baro_altitude_available.IsValid()){
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,HIG,%f", basic.baro_altitude);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ } else if (basic.gps_altitude_available.IsValid()){
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,HIG,%f", basic.gps_altitude);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+ } else {
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,HIG,%f", 0.0);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
  }
 
   bool tempAvil = basic.temperature_available;
   if (tempAvil){
     double temp = basic.temperature.ToCelsius();
-    sprintf(nmeaOutbuffer,"PFV,TEM,%f", temp);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,TEM,%f", temp);
     PortWriteNMEA(port, nmeaOutbuffer, env);
   }
 
   double trueAirspeedKmh = ((basic.true_airspeed * 60 * 60) / 1000);
-  sprintf(nmeaOutbuffer,"PFV,TAS,%f", trueAirspeedKmh);
+  snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,TAS,%f", trueAirspeedKmh);
   PortWriteNMEA(port, nmeaOutbuffer, env);
 
   if (basic.ground_speed_available.IsValid()){
-    double groundSpeed = ((basic.ground_speed * 60 * 60) / 1000);;
-    sprintf(nmeaOutbuffer,"PFV,GRS,%f", groundSpeed);
+    double groundSpeed = ((basic.ground_speed * 60 * 60) / 1000);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,GRS,%f", groundSpeed);
     PortWriteNMEA(port, nmeaOutbuffer, env);
   } else {
-    sprintf(nmeaOutbuffer,"PFV,GRS,%d", -1);
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-  }
-
-  double stfKmh = ((calculated.V_stf * 60 * 60) / 1000);
-  sprintf(nmeaOutbuffer,"PFV,STF,%f", stfKmh);
-  PortWriteNMEA(port, nmeaOutbuffer, env);
-
-  if (calculated.circling){
-    sprintf(nmeaOutbuffer,"PFV,MOD,%s", "C");
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-  } else {
-    sprintf(nmeaOutbuffer,"PFV,MOD,%s", "S");
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-  }
-
-  // vario average last 30 secs
-  sprintf(nmeaOutbuffer,"PFV,VAA,%f",calculated.average);
-  PortWriteNMEA(port, nmeaOutbuffer, env);
-
-  if (basic.settings.mac_cready_available.IsValid()){
-        double externalMC = basic.settings.mac_cready;
-        sprintf(nmeaOutbuffer,"PFV,MCE,%0.2f", (double)externalMC);
-        PortWriteNMEA(port, nmeaOutbuffer, env);
-  }
-
-  if (basic.settings.qnh_available.IsValid()){
-    double qnhHp = basic.settings.qnh.GetHectoPascal();
-    sprintf(nmeaOutbuffer,"PFV,QNH,%f",qnhHp);
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,GRS,%d", -1);
     PortWriteNMEA(port, nmeaOutbuffer, env);
   }
 }
-
 /*
  *  Send the internal xcsoar mc value to FreeVario device to
  *  be informed about MC changes doen in XCSoar
@@ -354,47 +376,52 @@ bool
 FreeVarioDevice::SendCmd(double value, const char *cmd,
   OperationEnvironment &env)
 {
-  if (!EnableNMEA(env)) {
+ if (!EnableNMEA(env)) {
     return false;
-  }
-  char nmeaOutbuffer[80];
-  sprintf(nmeaOutbuffer, cmd, value);
-  PortWriteNMEA(port, nmeaOutbuffer, env);
-  return true;
+ }
+ char nmeaOutbuffer[80];
+ snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer), cmd, value);
+ PortWriteNMEA(port, nmeaOutbuffer, env);
+ return true;
 }
 
 bool
 FreeVarioDevice::PutMacCready(double mc, OperationEnvironment &env)
 {
-  return SendCmd(mc, "PFV,MCI,%0.2f", env);
+ return SendCmd(mc, "PFV,MCI,%0.2f", env);
 }
 
 bool
-FreeVarioDevice::PutBugs(double bugs,OperationEnvironment &env)
-{
-  double bugsAsPercentage = (1 - bugs) * 100;
-  return SendCmd(bugsAsPercentage, "PFV,BUG,%f", env);
+FreeVarioDevice::PutBugs(double bugs,OperationEnvironment &env){
+ if (!EnableNMEA(env)){return false;}
+    char nmeaOutbuffer[80];
+    double bugsAsPercentage = (1 - bugs) * 100;
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,BUG,%f",bugsAsPercentage);
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+    return true;
 }
 
 bool
-FreeVarioDevice::PutQNH(const AtmosphericPressure &pres,
-  OperationEnvironment &env)
-{
-  return SendCmd(pres.GetHectoPascal(), "PFV,QNH,%f", env);
+FreeVarioDevice::PutQNH(const AtmosphericPressure &pres,OperationEnvironment &env) {
+ if (!EnableNMEA(env)){return false;}
+    char nmeaOutbuffer[80];
+    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,QNH,%f",pres.GetHectoPascal());
+    PortWriteNMEA(port, nmeaOutbuffer, env);
+    return true;
 }
 
 
 static Device *
 FreeVarioCreateOnPort([[maybe_unused]] const DeviceConfig &config,
-  Port &com_port)
+ Port &com_port)
 {
-  return new FreeVarioDevice(com_port);
+ return new FreeVarioDevice(com_port);
 }
 
 const struct DeviceRegister free_vario_driver = {
-  "FreeVario",
-  "FreeVario",
-  DeviceRegister::SEND_SETTINGS|
-  DeviceRegister::RECEIVE_SETTINGS,
-  FreeVarioCreateOnPort,
+ "FreeVario",
+ "FreeVario",
+ DeviceRegister::SEND_SETTINGS|
+ DeviceRegister::RECEIVE_SETTINGS,
+ FreeVarioCreateOnPort,
 };
