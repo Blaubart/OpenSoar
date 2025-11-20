@@ -111,11 +111,11 @@ jobs:
           - os: macos-14
             target: OSX64
 
-          ### August2111: - os: macos-14
-          ### August2111:   target: MACOS
-          ### August2111: 
-          ### August2111: - os: macos-15
-          ### August2111:   target: MACOS
+          - os: macos-14
+            target: MACOS
+          
+          - os: macos-15
+            target: MACOS
 
           - os: windows-2022
             target: WIN64
