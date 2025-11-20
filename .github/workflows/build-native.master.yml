@@ -136,7 +136,7 @@ jobs:
           if [ -z ${{ matrix.target_container }} ]; then
             # test w/o container:
             sudo apt-get update
-            sudo apt-get install -y libfmt-dev
+            sudo apt-get install -y libfmt-dev libgeotiff-dev
           else
             ./ide/provisioning/install-debian-packages.sh UPDATE BASE LINUX
           fi
@@ -416,7 +416,8 @@ jobs:
                 ./ide/provisioning/install-debian-packages.sh WIN
                 ;;
               UNIX)
-                ./ide/provisioning/install-debian-packages.sh LIBINPUT_GBM DEBIAN
+                ./ide/provisioning/install-debian-packages.sh
+                ### ./ide/provisioning/install-debian-packages.sh LIBINPUT_GBM DEBIAN
                 ;;
               KOBO)
                 ./ide/provisioning/install-debian-packages.sh ARM KOBO
