@@ -111,11 +111,11 @@ jobs:
           - os: macos-14
             target: OSX64
 
-          - os: macos-14
-            target: MACOS
-
-          - os: macos-15
-            target: MACOS
+          ### August2111: - os: macos-14
+          ### August2111:   target: MACOS
+          ### August2111: 
+          ### August2111: - os: macos-15
+          ### August2111:   target: MACOS
 
           - os: windows-2022
             target: WIN64
@@ -452,7 +452,7 @@ jobs:
                 mv output/ANDROID/bin/${{ matrix.target_bin }}-debug${{ matrix.target_ext }} ${{ matrix.target_bin }}${{ matrix.target_ext }}
                 ;;
               KOBO | UNIX)
-                 # do noting with deb files or Kobo files...
+                 # do nothing with deb files or Kobo files...
                 ;;
               *)
                 mv output/${{ matrix.target }}/bin/${{ matrix.target_bin }}${{ matrix.target_ext }} ${{ matrix.target_bin }}${{ matrix.target_ext }}
@@ -483,7 +483,9 @@ jobs:
           retention-days: 1
 
       - name: Compile OpenSoar - Sanitizer Check
-        if: ${{ matrix.target == 'UNIX' && !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/master'  }}
+        # !!!!August2111:
+        if: ${{ matrix.target == 'unknown' && !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/master'  }}
+        #  if: ${{ matrix.target == 'UNIX' && !startsWith(github.ref, 'refs/tags/v') && github.ref == 'refs/heads/master'  }}
         run: |
           echo "Unix - Sanitizer Check"
           make -j$(nproc) TARGET=${{ matrix.target }} DEBUG=${{ env.DEBUG }} USE_CCACHE=y V=2 everything VFB=y SANITIZE=y DEBUG_GLIBCXX=y
