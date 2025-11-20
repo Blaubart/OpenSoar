@@ -109,7 +109,7 @@ LogoPageWindow::OnPaint(Canvas &canvas) noexcept
     "https://xcsoar.org",
     "https://OpenSoar.de",
 #ifdef TWO_LOGO_APP
-    "https://SteFly.aero"
+    "https://FreeVario.de"
 #else  // TWO_LOGO_APP
     nullptr
 #endif  // TWO_LOGO_APP
