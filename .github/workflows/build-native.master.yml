@@ -111,11 +111,11 @@ jobs:
           - os: macos-14
             target: OSX64
 
-          - os: macos-14
-            target: MACOS
-          
-          - os: macos-15
-            target: MACOS
+         ### August2111 w/o MACOS - os: macos-14
+         ### August2111 w/o MACOS   target: MACOS
+         ### August2111 w/o MACOS 
+         ### August2111 w/o MACOS - os: macos-15
+         ### August2111 w/o MACOS   target: MACOS
 
           - os: windows-2022
             target: WIN64
@@ -279,14 +279,14 @@ jobs:
             target_upload: true
             # w/o container
 
-          - os: macos-14
-            target: MACOS
-            target_bin: OpenSoar
-            target_final: OpenSoar
-            target_ext: ''
-            target_test: true
-            target_upload: false
-            # w/o container
+          ### August2111 - os: macos-14
+          ### August2111   target: MACOS
+          ### August2111   target_bin: OpenSoar
+          ### August2111   target_final: OpenSoar
+          ### August2111   target_ext: ''
+          ### August2111   target_test: true
+          ### August2111   target_upload: false
+          ### August2111   # w/o container
           
           - os: macos-14
             target: IOS64
