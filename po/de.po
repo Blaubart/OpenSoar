@@ -1792,7 +1792,7 @@ msgstr "Vvorraussichtlich"
 
 #: src/UIActions.cpp:32
 msgid "Quit program?"
-msgstr "In die Shell gehen?"
+msgstr "OpenSoar beenden?"
 
 msgid "Reboot System?"
 msgstr "OpenVario Neustarten?"
@@ -3761,7 +3761,7 @@ msgstr "Wiedergabe"
 #: src/Dialogs/SimulatorPromptWindow.cpp:38 src/Dialogs/StartupDialog.cpp:73
 #: Data/Input/default.xci:955
 msgid "Quit"
-msgstr "Shell"
+msgstr "Beenden"
 
 #: src/Dialogs/SimulatorPromptWindow.cpp:90
 msgid "What do you want to do?"
