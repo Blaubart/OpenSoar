@@ -263,7 +263,13 @@ struct GeoPoint {
   [[gnu::pure]]
   GeoPoint Middle(const GeoPoint &other) const noexcept;
 
-  constexpr bool operator==(const GeoPoint &) const noexcept = default;
+  // constexpr bool operator==(const GeoPoint &) const noexcept = default;
+  constexpr bool Equals(const GeoPoint other) const noexcept {
+    return longitude == other.longitude && latitude == other.latitude;
+  }
+  constexpr bool operator==(const GeoPoint other) const noexcept {
+    return Equals(other);
+  }
 };
 
 static_assert(std::is_trivial<GeoPoint>::value, "type is not trivial");

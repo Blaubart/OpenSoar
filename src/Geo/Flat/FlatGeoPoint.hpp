@@ -69,7 +69,9 @@ struct FlatGeoPoint : IntPoint2D {
     return ::DotProduct(*this, other);
   }
 
-  constexpr bool operator==(const FlatGeoPoint &) const noexcept = default;
+  constexpr bool operator==(const FlatGeoPoint &other) const noexcept {
+    return IntPoint2D::operator==(other);
+  }
 
   [[gnu::pure]]
   bool Sort(const FlatGeoPoint& sp) const noexcept {
@@ -106,7 +108,9 @@ struct AFlatGeoPoint : public FlatGeoPoint {
     y = (y >> 2) << 2;
   }
 
-  constexpr bool operator==(const AFlatGeoPoint &) const noexcept = default;
+  constexpr bool operator==(const AFlatGeoPoint &other) const noexcept {
+    return FlatGeoPoint::operator==(other) && (altitude == other.altitude);
+  }
 
   /**
    * Ordering operator, used for set ordering.  Uses lexicographic comparison.
