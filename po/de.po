@@ -1792,7 +1792,13 @@ msgstr "Vvorraussichtlich"
 
 #: src/UIActions.cpp:32
 msgid "Quit program?"
-msgstr "Programm beenden?"
+msgstr "In die Shell gehen?"
+
+msgid "Reboot System?"
+msgstr "OpenVario Neustarten?"
+
+msgid "Shutdown System?"
+msgstr "OpenVario herunterfahren?"
 
 #: src/Units/UnitsStore.cpp:19
 #, no-c-format
@@ -2379,9 +2385,12 @@ msgid "Do you really want to delete all flights from the device?"
 msgstr "Bestätige, wirklich alle Flüge vom Gerät löschen?"
 
 #: src/Dialogs/Device/ManageCAI302Dialog.cpp:120
-#: src/Dialogs/Device/ManageFlarmDialog.cpp:97
+#: src/Dialogs/Device/ManageFlarmDialog.cpp:66
 msgid "Reboot"
 msgstr "Neustart"
+
+msgid "Shutdown"
+msgstr "Beenden"
 
 #: src/Dialogs/Device/CAI302/UnitsEditor.cpp:34
 #: src/Dialogs/Settings/Panels/UnitsConfigPanel.cpp:176
@@ -3752,7 +3761,7 @@ msgstr "Wiedergabe"
 #: src/Dialogs/SimulatorPromptWindow.cpp:38 src/Dialogs/StartupDialog.cpp:73
 #: Data/Input/default.xci:955
 msgid "Quit"
-msgstr "Beenden"
+msgstr "Shell"
 
 #: src/Dialogs/SimulatorPromptWindow.cpp:90
 msgid "What do you want to do?"
