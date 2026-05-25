@@ -18,6 +18,8 @@
 #include "Protection.hpp"
 #include "Input/InputEvents.hpp"
 #include <iostream>
+#include "time/PeriodClock.hpp"
+#include <cmath>
 
 using std::string_view_literals::operator""sv;
 
@@ -49,9 +51,16 @@ using std::string_view_literals::operator""sv;
 
 class FreeVarioDevice : public AbstractDevice {
     Port &port;
+    
+    PeriodClock qnh_clock;
+    double last_qnh_hpa = -1;
 
 public:
-  explicit FreeVarioDevice(Port &_port):port(_port){}
+  explicit FreeVarioDevice(Port &_port)
+    : port(_port)
+  {
+    qnh_clock.Update();
+  }
   bool ParseNMEA(const char *line,NMEAInfo &info) override;
   static bool PFVParser(NMEAInputLine &line, NMEAInfo &info, Port &port);
   bool POVParserAndForward(NMEAInputLine &line);
@@ -262,6 +271,20 @@ FreeVarioDevice::OnSensorUpdate(const MoreData &basic)
  NullOperationEnvironment env;
  char nmeaOutbuffer[80];
 
+ if (basic.settings.qnh_available.IsValid()) {
+   const double qnh_hpa = basic.settings.qnh.GetHectoPascal();
+
+   if (fabs(qnh_hpa - last_qnh_hpa) >= 0.1 ||
+       qnh_clock.CheckUpdate(std::chrono::seconds(60))) {
+	  snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),
+         "PFV,QNH,%0.1f",
+         qnh_hpa);
+     PortWriteNMEA(port, nmeaOutbuffer, env);
+
+     last_qnh_hpa = qnh_hpa;
+   }
+ }
+
  if (basic.total_energy_vario_available.IsValid()) {
     snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,VAR,%f", basic.total_energy_vario);
     PortWriteNMEA(port, nmeaOutbuffer, env);
@@ -405,8 +428,10 @@ bool
 FreeVarioDevice::PutQNH(const AtmosphericPressure &pres,OperationEnvironment &env) {
  if (!EnableNMEA(env)){return false;}
     char nmeaOutbuffer[80];
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,QNH,%f",pres.GetHectoPascal());
-    PortWriteNMEA(port, nmeaOutbuffer, env);
+	 snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),
+         "PFV,QNH,%0.1f",
+         pres.GetHectoPascal());    
+     PortWriteNMEA(port, nmeaOutbuffer, env);
     return true;
 }
 
