@@ -175,7 +175,10 @@ TransponderProcess() noexcept
   static Validity last_transponder_mode;
 
   if (basic.settings.has_transponder_code.Modified(last_transponder_code)) {
-    ActionInterface::SetTransponderCode(basic.settings.transponder_code, basic.settings.transponder_mode, false);
+    ActionInterface::SetTransponderCode(basic.settings.transponder_code, false);
+
+    if (basic.settings.transponder_mode.IsDefined())
+      ActionInterface::SetTransponderMode(basic.settings.transponder_mode);
     last_transponder_code = basic.settings.has_transponder_code;
     if (basic.settings.has_transponder_mode.Modified(last_transponder_mode))
       last_transponder_mode = basic.settings.has_transponder_mode;
