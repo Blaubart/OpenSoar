@@ -314,30 +314,39 @@ FreeVarioDevice::OnCalculatedUpdate(const MoreData &basic,
 
  NullOperationEnvironment env;
  char nmeaOutbuffer[80];
-
- if (!basic.external_instantaneous_wind_available.IsValid() && calculated.wind.IsNonZero() && basic.track_available){
-    const Angle relWindDirection = (calculated.wind.bearing - Angle::HalfCircle() - basic.track).AsBearing();
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWD,%f", relWindDirection.Degrees());
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWS,%f", calculated.wind.norm);
-    PortWriteNMEA(port, nmeaOutbuffer, env);
- }
  
- if (basic.external_wind_available.IsValid() && basic.attitude.heading_available){
-    const Angle relWindDirection = (basic.external_wind.bearing - Angle::HalfCircle() - basic.attitude.heading).AsBearing();     
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWD,%f", relWindDirection.Degrees());
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,AWS,%f", basic.external_wind.norm);
-    PortWriteNMEA(port, nmeaOutbuffer, env);
- }
+ if (!basic.external_instantaneous_wind_available.IsValid() &&
+    calculated.wind_available.IsValid() &&
+    calculated.wind.IsNonZero() &&
+    basic.track_available) {
+  const Angle relWindDirection =
+      (calculated.wind.bearing - Angle::HalfCircle() - basic.track).AsBearing();
 
- if (basic.external_instantaneous_wind_available.IsValid() && basic.attitude.heading_available){
-    const Angle relWindDirection = (basic.external_instantaneous_wind.bearing - Angle::HalfCircle() - basic.attitude.heading).AsBearing();     
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,CWD,%f", relWindDirection.Degrees());
-    PortWriteNMEA(port, nmeaOutbuffer, env);
-    snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,CWS,%f", basic.external_instantaneous_wind.norm);
-    PortWriteNMEA(port, nmeaOutbuffer, env);
- }
+  snprintf(nmeaOutbuffer, sizeof(nmeaOutbuffer), "PFV,AWD,%f", relWindDirection.Degrees());
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+
+  snprintf(nmeaOutbuffer, sizeof(nmeaOutbuffer), "PFV,AWS,%f", calculated.wind.norm);
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+}
+
+if (basic.external_instantaneous_wind_available.IsValid() &&
+    basic.attitude.heading_available) {
+  const Angle relWindDirection =
+      (basic.external_instantaneous_wind.bearing - Angle::HalfCircle() -
+       basic.attitude.heading).AsBearing();
+
+  snprintf(nmeaOutbuffer, sizeof(nmeaOutbuffer), "PFV,AWD,%f", relWindDirection.Degrees());
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+
+  snprintf(nmeaOutbuffer, sizeof(nmeaOutbuffer), "PFV,AWS,%f", basic.external_instantaneous_wind.norm);
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+
+  snprintf(nmeaOutbuffer, sizeof(nmeaOutbuffer), "PFV,CWD,%f", relWindDirection.Degrees());
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+
+  snprintf(nmeaOutbuffer, sizeof(nmeaOutbuffer), "PFV,CWS,%f", basic.external_instantaneous_wind.norm);
+  PortWriteNMEA(port, nmeaOutbuffer, env);
+}
  
  // vario average last 30 secs
  snprintf(nmeaOutbuffer,sizeof(nmeaOutbuffer),"PFV,VAA,%f",calculated.average);
