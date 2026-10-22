@@ -98,6 +98,13 @@ LarusDevice::ParseNMEA(const char *_line, NMEAInfo &info)
       return PLARW(line, info);
     case 'S':
       return PLARS(line, info);
+    case 'F': {
+      info.device.product = "Larus"sv;
+     char buffer[32];
+     CopyString(buffer, sizeof(buffer), line.ReadView());
+     info.device.software_version = buffer;
+     return true;
+    }
     default:
       break;
     }
@@ -186,30 +193,43 @@ LarusDevice::PLARA(NMEAInputLine &line, NMEAInfo &info)
 bool
 LarusDevice::PLARB(NMEAInputLine &line, NMEAInfo &info)
 {
-    /*
-     * Battery voltage sentence
-     *
-     *        1     2     3
-     *        |     |     |
-     * $PLARB,xx.xx,xxx.x*hh<CR><LF>
-     * 
-     * Field Number:
-     * 1)  battery voltage in Volt
-     * 2)  Outside Temperature in Celsius (new in v0.1.4)
-     * 3)  Checksum
-    */
+  /*
+   * Battery voltage sentence
+   *
+   *        1     2     3     4
+   *        |     |     |     |
+   * $PLARB,xx.xx,xxx.x,xxx.x*hh
+   *
+   * Field Number:
+   * 1) battery voltage in Volt
+   * 2) Outside Temperature in Celsius
+   * 3) Relative humidity in percent
+   * 4) Checksum
+   */
+
   double value;
+  
   if (line.ReadChecked(value)) {
     if (value >= 0 && value <= 25) {
       info.voltage = value;
       info.voltage_available.Update(info.clock);
     }
   }
-  // Outside air temperature (OAT)
+
   if (line.ReadChecked(value)) {
-    info.temperature = Temperature::FromCelsius(value);
-    info.temperature_available.Update(info.clock);
+    if (value >= -60 && value <= 80) {
+      info.temperature = Temperature::FromCelsius(value);
+      info.temperature_available = true;
+    }
   }
+
+  if (line.ReadChecked(value)) {
+    if (value >= 0 && value <= 100) {
+      info.humidity = value;
+      info.humidity_available = true;
+    }
+  }
+
   return true;
 }
 

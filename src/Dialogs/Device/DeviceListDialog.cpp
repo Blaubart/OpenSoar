@@ -644,7 +644,22 @@ DeviceListWidget::EditCurrent()
 
   const unsigned index = current;
   DeviceConfig &config = CommonInterface::SetSystemSettings().devices[index];
-  DeviceEditWidget widget(config);
+    std::string firmware_version;
+
+  {
+    const std::lock_guard lock{device_blackboard.mutex};
+    const NMEAInfo &basic = device_blackboard.RealState(index);
+
+    firmware_version = basic.device.software_version.c_str();
+
+    if (firmware_version.empty())
+      firmware_version = basic.secondary_device.software_version.c_str();
+  }
+
+  DeviceEditWidget widget(config,
+                        firmware_version.empty()
+                          ? "No Device..."
+                          : firmware_version.c_str());
 
   if (!DefaultWidgetDialog(UIGlobals::GetMainWindow(), UIGlobals::GetDialogLook(),
                            _("Edit device"), widget))
